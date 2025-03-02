@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Departures and Arrivals</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px;
+    }
+
+    .column {
+      width: 45%;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .column h2 {
+      text-align: center;
+    }
+
+    .autocomplete {
+      width: 50%;
+      margin: 20px auto;
+      padding: 5px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Live Departures and Arrivals</h1>
+  </header>
+  <input
+    id="stationInput"
+    class="autocomplete"
+    placeholder="Type a station code (e.g., WAT, PAD, KGX)"
+  />
+  <button onclick="fetchData()">Search</button>
+  <div class="container">
+    <div class="column" id="departures">
+      <h2>Departures</h2>
+      <ul id="departureList"></ul>
+    </div>
+    <div class="column" id="arrivals">
+      <h2>Arrivals</h2>
+      <ul id="arrivalList"></ul>
+    </div>
+  </div>
+
+  <script>
+    const apiKey = "99ca332fedb96c371890677d8aba8316";
+    const appId = "d9a6d45a";
+    const baseUrl = "https://transportapi.com/v3/uk/train/station";
+
+    let stations = [];
+
+    // Fetch stations from the JSON file
+    async function loadStations() {
+      try {
+        const response = await fetch("stations.json");
+        stations = await response.json();
+
+        // Enable autocomplete functionality
+        $("#stationInput").autocomplete({
+          source: stations,
+          select: function (event, ui) {
+            $("#stationInput").val(ui.item.value); // Set input value to station code
+            return false; // Prevent default behavior
+          },
+        });
+      } catch (error) {
+        console.error("Error loading stations:", error);
+        alert("Failed to load station codes.");
+      }
+    }
+
+    // Call loadStations on page load
+    $(document).ready(function () {
+      loadStations();
+    });
+
+    async function fetchData() {
+      const station = document.getElementById("stationInput").value;
+
+      if (!station) {
+        alert("Please select or type a valid station code.");
+        return;
+      }
+
+      const endpoint = `${baseUrl}/${station}/live.json?app_key=${apiKey}&app_id=${appId}`;
+
+      try {
+        const response = await fetch(endpoint);
+        const data = await response.json();
+
+        if (response.ok) {
+          updateDepartures(data.departures.all || []);
+          updateArrivals(data.arrivals.all || []);
+        } else {
+          console.error("API Error:", data);
+          alert("Failed to fetch data. Check your API key or station code.");
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("An error occurred while fetching live train data.");
+      }
+    }
+
+    function updateDepartures(departures) {
+      const departureList = document.getElementById("departureList");
+      departureList.innerHTML = "";
+
+      if (departures.length === 0) {
+        departureList.innerHTML = "<li>No departures available.</li>";
+        return;
+      }
+
+      departures.forEach((departure) => {
+        const li = document.createElement("li");
+        li.textContent = `${departure.aimed_departure_time} - ${departure.destination_name} (Platform ${departure.platform || "N/A"})`;
+        departureList.appendChild(li);
+      });
+    }
+
+    function updateArrivals(arrivals) {
+      const arrivalList = document.getElementById("arrivalList");
+      arrivalList.innerHTML = "";
+
+      if (arrivals.length === 0) {
+        arrivalList.innerHTML = "<li>No arrivals available.</li>";
+        return;
+      }
+
+      arrivals.forEach((arrival) => {
+        const li = document.createElement("li");
+        li.textContent = `${arrival.aimed_arrival_time} - From ${arrival.origin_name} (Platform ${arrival.platform || "N/A"})`;
+        arrivalList.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
