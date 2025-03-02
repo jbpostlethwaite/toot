@@ -106,14 +106,22 @@
     });
 
     async function fetchData() {
-      const station = document.getElementById("stationInput").value;
+      const stationCode = document.getElementById("stationInput").value;
 
-      if (!station) {
+      if (!stationCode) {
         alert("Please select or type a valid station code.");
         return;
       }
 
-      const endpoint = `${baseUrl}/${station}/live.json?app_key=${apiKey}&app_id=${appId}`;
+      // Get the station name from the stations array
+      const station = stations.find((s) => s.code === stationCode);
+      const stationName = station ? station.name : stationCode; // Fallback to code if name is unavailable
+
+      // Update the headings
+      document.querySelector("#departures h2").textContent = `Departures from ${stationName}`;
+      document.querySelector("#arrivals h2").textContent = `Arrivals to ${stationName}`;
+
+      const endpoint = `${baseUrl}/${stationCode}/live.json?app_key=${apiKey}&app_id=${appId}`;
 
       try {
         const response = await fetch(endpoint);
