@@ -80,14 +80,25 @@
         const response = await fetch("stations.json");
         stations = await response.json();
 
+        // Ensure stations have valid structure
+        stations = stations.filter(
+          (station) => station.name && station.code && station.label
+        );
+
         // Enable autocomplete functionality
         $("#stationInput").autocomplete({
           source: function (request, response) {
-            const searchTerm = request.term.toLowerCase();
+            const searchTerm = request.term ? request.term.toLowerCase() : "";
             const filteredStations = stations.filter((station) =>
-              station.name.toLowerCase().includes(searchTerm) || station.code.toLowerCase().includes(searchTerm)
+              station.name.toLowerCase().includes(searchTerm) ||
+              station.code.toLowerCase().includes(searchTerm)
             );
-            response(filteredStations.map((station) => ({ label: station.label, value: station.code })));
+            response(
+              filteredStations.map((station) => ({
+                label: station.label,
+                value: station.code
+              }))
+            );
           },
           select: function (event, ui) {
             $("#stationInput").val(ui.item.value); // Set input value to station code
