@@ -80,25 +80,14 @@
         const response = await fetch("stations.json");
         stations = await response.json();
 
-        // Ensure stations have valid structure
-        stations = stations.filter(
-          (station) => station.name && station.code && station.label
-        );
-
         // Enable autocomplete functionality
         $("#stationInput").autocomplete({
           source: function (request, response) {
-            const searchTerm = request.term ? request.term.toLowerCase() : "";
+            const searchTerm = request.term.toLowerCase();
             const filteredStations = stations.filter((station) =>
-              station.name.toLowerCase().includes(searchTerm) ||
-              station.code.toLowerCase().includes(searchTerm)
+              station.name.toLowerCase().includes(searchTerm) || station.code.toLowerCase().includes(searchTerm)
             );
-            response(
-              filteredStations.map((station) => ({
-                label: station.label,
-                value: station.code
-              }))
-            );
+            response(filteredStations.map((station) => ({ label: station.label, value: station.code })));
           },
           select: function (event, ui) {
             $("#stationInput").val(ui.item.value); // Set input value to station code
@@ -117,22 +106,14 @@
     });
 
     async function fetchData() {
-      const stationCode = document.getElementById("stationInput").value;
+      const station = document.getElementById("stationInput").value;
 
-      if (!stationCode) {
+      if (!station) {
         alert("Please select or type a valid station code.");
         return;
       }
 
-      // Get the station name from the stations array
-      const station = stations.find((s) => s.code === stationCode);
-      const stationName = station ? station.name : stationCode; // Fallback to code if name is unavailable
-
-      // Update the headings
-      document.querySelector("#departures h2").textContent = `Departures from ${stationName}`;
-      document.querySelector("#arrivals h2").textContent = `Arrivals to ${stationName}`;
-
-      const endpoint = `${baseUrl}/${stationCode}/live.json?app_key=${apiKey}&app_id=${appId}`;
+      const endpoint = `${baseUrl}/${station}/live.json?app_key=${apiKey}&app_id=${appId}`;
 
       try {
         const response = await fetch(endpoint);
